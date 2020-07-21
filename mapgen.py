@@ -1,4 +1,4 @@
-from typing import Iterator, Tuple
+from typing import Iterator, Tuple, TYPE_CHECKING
 
 import colours
 import numpy as np  # type: ignore
@@ -7,11 +7,20 @@ from voronoi import Voronoi
 import tcod.noise
 import random
 import tile_types
+import utility
+from entity import Actor
+from actions import CreateWallAction, CreateFloorAction, CreatePropAction, CreateJobAction
+from jobs import Job
+
+if TYPE_CHECKING:
+    from engine import Engine
+
+# TEMP
+import entity_factories
 
 
-def generate_landscape(map_width, map_height) -> GameMap:
-    landscape = GameMap(map_width, map_height)
-
+def generate_landscape(engine, map_width, map_height) -> GameMap:
+    landscape = GameMap(engine, map_width, map_height)
     # Generate and draw a voronoi diagram, then grab the points from a few of its sections to fill later
     vorgen = Voronoi(40, np.array([-1, map_width + 1, -1, map_height + 1]))
     draw_voronoi(vorgen, landscape, colours.WHITE)
@@ -37,6 +46,20 @@ def generate_landscape(map_width, map_height) -> GameMap:
 
     # Add more granular noise on top to break things up
     add_noise_to_landscape(landscape, noise, 0.9, colours.GRASS_GREEN, colours.DARK_GREEN)
+
+    # Temp building placement
+    """
+    place_rectangle_building(landscape, (20, 20), 5, 5)
+    place_rectangle_building(landscape, (40, 40), 8, 8)
+    place_rectangle_building(landscape, (40, 20), 5, 5)
+    """
+    place_church(landscape, engine, (20, 5))
+
+    # Save this version of the map so effects can happen to it over the course of the game
+    save_original_colours(landscape)
+
+    # Temp to test entity factories
+    engine.player.place(int(map_width / 2), int(map_height / 2), landscape)
 
     return landscape
 
@@ -177,3 +200,297 @@ def get_fill_points(landscape, start_coords: Tuple[int, int]):
                 stack.add((x, y + 1))
 
     return points
+
+
+def save_original_colours(landscape):
+    for x in range(0, landscape.width):
+        for y in range(0, landscape.height):
+            landscape.tiles[x, y]["original_bg"] = landscape.tiles[x, y]["graphic"]["bg"]
+
+
+""" Temp building generators """
+
+
+def place_rectangle_building(landscape, center: Tuple[int, int], width: int, height: int, place_door: bool, wear_surrounds: bool) -> None:
+    # Place floor
+    for x in range(center[0] - int(width / 2), center[0] + int(width / 2) + 1):
+        for y in range(center[1] - int(height / 2), center[1] + int(height / 2) + 1):
+            landscape.tiles[x, y]["graphic"]["bg"] = colours.GREY
+            landscape.tiles[x, y]["graphic"]["ch"] = ord(' ')
+            landscape.tiles[x, y]["wearable"] = False
+
+    for x in range(center[0] - int(width / 2), center[0] + int(width / 2) + 1):
+        point = (x, center[1] - int(height / 2))
+        if wear_surrounds:
+            landscape.tiles[point[0], point[1] - 1]["graphic"]["bg"] = colours.colour_lerp(colours.GRASS_GREEN, colours.DRY_MUD_BROWN, max(random.random(), 0.4))
+            landscape.tiles[point[0], point[1] - 1]["cost"] = 10
+        landscape.tiles[point[0], point[1]]["graphic"]["fg"] = colours.DARK_GREY
+        landscape.tiles[point[0], point[1]]["graphic"]["ch"] = 9552
+        landscape.tiles[point[0], point[1]]["walkable"] = False
+
+        point = (x, center[1] + int(height / 2))
+        if wear_surrounds:
+            landscape.tiles[point[0], point[1] + 1]["graphic"]["bg"] = colours.colour_lerp(colours.GRASS_GREEN, colours.DRY_MUD_BROWN, max(random.random(), 0.4))
+            landscape.tiles[point[0], point[1] + 1]["cost"] = 10
+        landscape.tiles[point[0], point[1]]["graphic"]["fg"] = colours.DARK_GREY
+        landscape.tiles[point[0], point[1]]["graphic"]["ch"] = 9552
+        landscape.tiles[point[0], point[1]]["walkable"] = False
+
+    for y in range(center[1] - int(height / 2), center[1] + int(height / 2) + 1):
+        if wear_surrounds:
+            landscape.tiles[center[0] - int(width / 2) - 1, y]["graphic"]["bg"] = colours.colour_lerp(colours.GRASS_GREEN, colours.DRY_MUD_BROWN, max(random.random(), 0.4))
+            landscape.tiles[center[0] - int(width / 2) - 1, y]["cost"] = 10
+        landscape.tiles[center[0] - int(width / 2), y]["graphic"]["fg"] = colours.DARK_GREY
+        landscape.tiles[center[0] - int(width / 2), y]["graphic"]["ch"] = 9553
+        landscape.tiles[center[0] - int(width / 2), y]["walkable"] = False
+
+        if wear_surrounds:
+            landscape.tiles[center[0] + int(width / 2) + 1, y]["graphic"]["bg"] = colours.colour_lerp(colours.GRASS_GREEN, colours.DRY_MUD_BROWN, max(random.random(), 0.4))
+            landscape.tiles[center[0] + int(width / 2) + 1, y]["cost"] = 10
+        landscape.tiles[center[0] + int(width / 2), y]["graphic"]["fg"] = colours.DARK_GREY
+        landscape.tiles[center[0] + int(width / 2), y]["graphic"]["ch"] = 9553
+        landscape.tiles[center[0] + int(width / 2), y]["walkable"] = False
+
+    # Place corners
+
+    landscape.tiles[center[0] - int(width / 2), center[1] - int(height / 2)]["graphic"]["ch"] = 9556
+    landscape.tiles[center[0] - int(width / 2), center[1] + int(height / 2)]["graphic"]["ch"] = 9562
+    landscape.tiles[center[0] + int(width / 2), center[1] - int(height / 2)]["graphic"]["ch"] = 9559
+    landscape.tiles[center[0] + int(width / 2), center[1] + int(height / 2)]["graphic"]["ch"] = 9565
+
+    # Place Door
+    if place_door:
+        if random.random() < 0.5:
+            if random.random() < 0.5:
+                door_position = (random.randint(center[0] - int(width / 2) + 1, center[0] + int(width / 2) - 1), center[1] + int(height / 2))
+            else:
+                door_position = (random.randint(center[0] - int(width / 2) + 1, center[0] + int(width / 2) - 1), center[1] - int(height / 2))
+        else:
+            if random.random() < 0.5:
+                door_position = (center[0] - int(width / 2), random.randint(center[1] - int(height / 2) + 1, center[1] + int(height / 2) - 1))
+            else:
+                door_position = (center[0] + int(width / 2), random.randint(center[1] - int(height / 2) + 1, center[1] + int(height / 2) - 1))
+
+        landscape.tiles[door_position]["graphic"]["fg"] = colours.DARK_GREY
+        landscape.tiles[door_position]["graphic"]["ch"] = ord(' ')
+        landscape.tiles[door_position]["walkable"] = True
+
+
+def place_church(landscape, engine, position: Tuple[int, int]):
+    # Place floor
+    width = 13
+    height = 5
+    # place_rectangle_building(landscape, position, width, height, place_door=False, wear_surrounds=False)
+
+    width = 7
+    height = 18
+    # place_rectangle_building(landscape, (position[0], position[1] + int(height / 5)), width, height, place_door=False, wear_surrounds=False)
+
+    width = 11
+    height = 3
+    # draw_rectangle(landscape, position, width, height, colour=colours.GREY, character=ord(' '))
+
+    """
+    church = ('''\
+        quuuuuw
+        x.....x
+        x.o.o.x
+        x.....x
+     quur.....euuw
+     x...........x
+     x...........x  xuux
+     x...........x  x..x
+     euuw.....qu.r  x..x
+        x.o.o.x..uuuu.uuw
+        x.....x.........x
+        x.o.o.x.o o o o.x
+        x.......       .x
+        x.o.o.x.o     o.x
+        x.....x.       .x
+        x.o.o.x.o     o.x
+        x.....x.       .x
+        x.o.o.x.o o o o.x
+        x.....x.........x
+        eu.u.uruuuuuuuuur
+        ''')
+    """
+    tiny_church = ('''\
+         quw
+        qroew
+        xh.hx
+        xh.hx
+        xh.hx
+        eu.ur
+        ''')
+
+    smaller_church = ('''\
+         quuuw
+        qr...ew
+        x.....x
+        xh...hx
+        xh...hx
+      qur.....euw
+      x.........x
+      x.........x
+      x.........x
+      euw.o.o.qur
+        xhh.hhx
+        xho.ohx
+        xhh.hhx
+        xho.ohx
+        xhh.hhx
+        x.o.o.x
+        x.....x
+        euu.uur
+        ''')
+
+    small_church = ('''\
+         quuuuw
+        qr....ew
+        x......x
+        x.o..o.x
+        x......x
+     quur.o..o.euuw
+     x............x
+     x............x
+     x............x
+     x............x
+     euuw.o..o.quur
+        x......x
+        x.o..o.x
+        x......x
+        x.o..o.x
+        x......x
+        x.o..o.x
+        x......x
+        x.o..o.x
+        x......x
+        eu.uu.ur
+        ''')
+
+    big_church = ('''\
+         quuuuuuuw
+        qr.......ew
+        x.........x
+        x.........x
+        x..o...o..x
+        x..|...|..x
+        x..|...|..x
+        x..|...|..x
+        x..|...|..x
+        x..o...o..x
+  quuuuur.........euuuuuw
+  x.....................x
+  x.o.o.o..o...o..o.o.o.x
+  x.....................x
+  x.....................x
+  x.....................x
+  x.o.o.o..o...o..o.o.o.x
+  x.....................x
+  euuuuuw..o...o..quuuuuruuuuuuuw
+        x.........x.............x
+        x..o...o..x.............x
+        x.........x..         ..xuuuuuuuuuw
+        x..o...o..x..         ..x.........x
+        x.........x..         ..x.o.o.o.o.x
+        x..o...o..x..         ..x.........x
+        x.........x..         ..x.........x
+        x..o...o..x..         ..x.o.o.o.o.x
+        x.........x..         ..x.........x
+        x..o...o..x..         ..xuuuuuuuuur
+        x.........x..         ..x
+        x..o...o..x.............x
+        x.........x.............x
+        x..o...o..xuuuuuuuuuuuuur
+        x.........x
+        x..o...o..x
+        x.........x
+        eu..uuu..ur
+        ''')
+
+    x, y = position[0], position[1]
+    wall_jobs = list()
+    floor_jobs = list()
+    prop_jobs = list()
+    for character in smaller_church:
+        if character is not ' ' and character is not "\n" and character is not "\r":
+
+            job = None
+            if character is 'x' or character is 'u' or character is 'e' or character is 'r' or character is 'q' or character is 'w':
+                locations = utility.get_vonneumann_tiles([x, y])
+                completion_action = CreateWallAction(landscape.engine.player, [x, y])
+                job = Job(locations, 1, completion_action, None, None, "Build Wall")
+                wall_jobs.append(job)
+            elif character is 'o':
+                completion_action = CreatePropAction(landscape.engine.player, entity_factories.stone_pillar, [x, y])
+                job = Job([[x, y]], 1, completion_action, None, None, "Create Prop")
+                prop_jobs.append(job)
+            else:
+                completion_action = CreateFloorAction(landscape.engine.player, [x, y])
+                job = Job([[x, y]], 1, completion_action, None, None, "Build Floor")
+                floor_jobs.append(job)
+
+            # landscape.tiles[x, y]["graphic"]["ch"] = ord(' ')
+
+        if character is "\n" or character is "\r":
+            x = position[0]
+            y += 1
+        else:
+            x += 1
+
+    for j in wall_jobs:
+        if j is not None:
+            engine.jobs.queue.put(j)
+
+    for j in prop_jobs:
+        if j is not None:
+            engine.jobs.queue.put(j)
+
+    for j in floor_jobs:
+        if j is not None:
+            engine.jobs.queue.put(j)
+
+
+"""Temp function, this file should be just for landscape stuff"""
+
+
+def place_random_entities(landscape, minimum_entities: int, maximum_entities: int,) -> None:
+    n_entities = random.randint(minimum_entities, maximum_entities)
+
+    for i in range(n_entities):
+        x = random.randint(1, landscape.width - 1)
+        y = random.randint(1, landscape.height - 1)
+
+        if not any(entity.x == x and entity.y == y for entity in landscape.entities):
+            brother = entity_factories.brother.spawn(landscape, x, y)
+            brother.ai.route = [(20, 20), (40, 40), (20, 40)]
+
+
+def place_entities_in_random_location(landscape, entity: Actor, n_entities: int,) -> None:
+    for i in range(n_entities):
+        x = random.randint(1, landscape.width - 1)
+        y = random.randint(1, landscape.height - 1)
+
+        if not any(entity.x == x and entity.y == y for entity in landscape.entities):
+            brother = entity.spawn(landscape, x, y)
+            brother.ai.route = [(20, 20), (40, 40), (40, 20)]
+
+
+def get_surrounding_tiles(position: Tuple[int, int]):
+    return ([position[0] - 1, position[1] - 1],
+            [position[0] - 1, position[1] + 1],
+            [position[0] + 1, position[1] - 1],
+            [position[0] + 1, position[1] + 1],
+            [position[0] - 1, position[1]],
+            [position[0] + 1, position[1]],
+            [position[0], position[1] - 1],
+            [position[0], position[1] + 1],
+            )
+
+
+def draw_rectangle(landscape, center, width, height, colour: Tuple[int, int, int], character):
+    for x in range(center[0] - int(width / 2), center[0] + int(width / 2) + 1):
+        for y in range(center[1] - int(height / 2), center[1] + int(height / 2) + 1):
+            landscape.tiles[x, y]["graphic"]["bg"] = colour
+            landscape.tiles[x, y]["graphic"]["ch"] = character
+            landscape.tiles[x, y]["wearable"] = False

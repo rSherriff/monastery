@@ -2,6 +2,7 @@ from typing import Tuple
 
 import numpy as np  # type: ignore
 import colours
+import random
 
 # Tile graphics structured type compatible with Console.tiles_rgb.
 graphic_dt = np.dtype(
@@ -17,7 +18,11 @@ tile_dt = np.dtype(
     [
         ("walkable", np.bool),  # True if this tile can be walked over.
         ("transparent", np.bool),  # True if this tile doesn't block FOV.
+        ("wearable", np.bool),  # True if this tile can be worn down
+        ("wear", np.float),  # True if this tile doesn't block FOV.
         ("graphic", graphic_dt),  # Graphics for when this tile is not in FOV.
+        ("original_bg", "3B"),
+        ("cost", np.int)
     ]
 )
 
@@ -27,21 +32,34 @@ def new_tile(
     walkable: int,
     transparent: int,
     graphic: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
+    wearable: bool
 ) -> np.ndarray:
     """Helper function for defining individual tile types """
-    return np.array((walkable, transparent, graphic), dtype=tile_dt)
+    wear = 1
+    cost = 0
+    return np.array((walkable, transparent, wearable, wear, graphic, graphic[2], cost), dtype=tile_dt)
 
 
 # SHROUD represents unexplored, unseen tiles
-SHROUD = np.array((ord(" "), (255, 255, 255), (0, 0, 0)), dtype=graphic_dt)
+#SHROUD = np.array((ord(" "), (255, 255, 255), (0, 0, 0)), dtype=graphic_dt)
 
 floor = new_tile(
     walkable=True,
     transparent=True,
-    graphic=(ord(" "), (255, 255, 255), colours.GRASS_GREEN)
+    wearable=True,
+    graphic=(ord(" "), (255, 255, 255), colours.GRASS_GREEN),
 )
+
+stone_floor = new_tile(
+    walkable=True,
+    transparent=True,
+    wearable=False,
+    graphic=(ord(" "), (255, 255, 255), colours.GREY),
+)
+
 wall = new_tile(
-    walkable=False,
+    walkable=True,
     transparent=False,
-    graphic=(ord(" "), (255, 255, 255), (0, 0, 100))
+    wearable=True,
+    graphic=(ord(" "), colours.WALL_FG, colours.WALL_BG),
 )

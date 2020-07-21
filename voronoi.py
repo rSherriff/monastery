@@ -13,8 +13,8 @@ class Voronoi:
         # Select towers inside the bounding box
         towers = np.zeros((n_towers, 2), dtype=int)
         for i in range(0, n_towers):
-            towers[i][0] = np.random.randint(0, bounding_box[1])
-            towers[i][1] = np.random.randint(0, bounding_box[3])
+            towers[i][0] = np.random.randint(0, bounding_box[1] - 1)
+            towers[i][1] = np.random.randint(0, bounding_box[3] - 1)
         i = self.in_box(towers, bounding_box)
         # Mirror points
         points_center = towers[i, :]
