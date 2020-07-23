@@ -12,6 +12,7 @@ import random
 if TYPE_CHECKING:
     from components.ai import BaseAI
     from components.animal import Animal
+    from components.schedule import BaseSchedule
     from game_map import GameMap
 
 T = TypeVar("T", bound="Entity")
@@ -109,6 +110,7 @@ class Actor(Entity):
         colours_bg: bool = False,
         name: str = "<unnamed>",
         ai_cls: Type[BaseAI],
+        schedule_cls: Type[BaseSchedule],
         animal: Animal,
         weight: int = 0,
     ):
@@ -127,6 +129,7 @@ class Actor(Entity):
         )
 
         self.ai: Optional[BaseAI] = ai_cls(self)
+        self.schedule: Optional[BaseSchedule] = schedule_cls(self)
 
         self.animal = animal
         self.animal.entity = self
@@ -136,7 +139,10 @@ class Actor(Entity):
         """Returns True as long as this actor can perform actions."""
         return bool(self.ai)
 
-    def act(self):
+    def update(self):
+        if self.schedule:
+            self.schedule.update()
+
         if self.ai:
             self.ai.perform()
 
@@ -172,6 +178,8 @@ class Prop(Entity):
 
     def spawn(self: T, gamemap: GameMap, x: int, y: int) -> T:
         clone = super().spawn(gamemap, x, y)
-        clone.bg_colour = colours.colour_lerp(clone.bg_colour, (clone.bg_colour[0] - 30, clone.bg_colour[1] - 30, clone.bg_colour[2] - 30), max(0.4, random.random()))
+
+        if self.colours_bg:
+            clone.bg_colour = colours.colour_lerp(clone.bg_colour, (max(0, clone.bg_colour[0] - 30), max(0, clone.bg_colour[1] - 30), max(0, clone.bg_colour[2] - 30)), max(0.4, random.random()))
 
         return clone

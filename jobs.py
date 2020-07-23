@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 
 
 class Job:
+    """Class representing a job that some actor is going to go do."""
+
     def __init__(self, locations: list(Tuple[int, int]), work: float, completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
         self.locations = locations
         self.work = work
@@ -30,7 +32,7 @@ class Job:
         self.startAction = startAction
 
     def work_on(self, worker: Entity, work_amount: float):
-
+        """Do some amount of work to the job. If the job is down then complete."""
         self.worker = worker
 
         if not self.in_progress:
@@ -41,6 +43,7 @@ class Job:
             self.complete()
 
     def complete(self):
+        """Mark self as completed and trigger completion event."""
         # self.worker.engine.message_log.add_message(f"Job {self.name} has been completed by {self.worker.entity.name}")
         self.completed = True
 
@@ -48,15 +51,19 @@ class Job:
             self.completionAction.perform()
 
     def cancel(self):
+        """Trigger cancel action."""
         if self.cancelAction is not None:
             self.cancelAction.perform()
 
     def start(self):
+        """Mark self as started and trigger start action."""
         if self.startAction is not None:
             self.startAction.perform()
         self.in_progress = True
 
     def sort_locations_for_distance(self, point: Tuple[int, int]):
+        """Sort the locations by distance form some point.
+        This is used to get the worked doing this job to the sloest place they can do it."""
         self.locations = sorted(self.locations, key=lambda location: self.chebyshev_distance(location, point))
 
     def chebyshev_distance(self, pointA: Tuple[int, int], pointB: Tuple[int, int]):
@@ -66,6 +73,8 @@ class Job:
 
 
 class Jobs:
+    """Container of all jobs. Different queues for different types of jobs."""
+
     def __init__(self, engine: Engine):
         self.engine = engine
         self.queue = queue.Queue()

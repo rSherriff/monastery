@@ -48,8 +48,8 @@ class GameMap:
                 # order to surround the player.
                 if isinstance(entity, Actor):
                     self.cost[entity.x, entity.y] += 10
-                # if isinstance(entity, Prop):
-                    #self.cost[entity.x, entity.y] += 1000
+                if isinstance(entity, Prop):
+                    self.cost[entity.x, entity.y] += 1000
 
         self.graph = tcod.path.SimpleGraph(cost=self.cost, cardinal=2, diagonal=3)
 

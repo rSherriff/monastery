@@ -11,6 +11,7 @@ import utility
 from entity import Actor
 from actions import CreateWallAction, CreateFloorAction, CreatePropAction, CreateJobAction
 from jobs import Job
+from rooms import RoomType
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -21,6 +22,8 @@ import entity_factories
 
 def generate_landscape(engine, map_width, map_height) -> GameMap:
     landscape = GameMap(engine, map_width, map_height)
+    map_center = (int(map_width / 2), int(map_height / 2))
+
     # Generate and draw a voronoi diagram, then grab the points from a few of its sections to fill later
     vorgen = Voronoi(40, np.array([-1, map_width + 1, -1, map_height + 1]))
     draw_voronoi(vorgen, landscape, colours.WHITE)
@@ -53,13 +56,35 @@ def generate_landscape(engine, map_width, map_height) -> GameMap:
     place_rectangle_building(landscape, (40, 40), 8, 8)
     place_rectangle_building(landscape, (40, 20), 5, 5)
     """
-    place_church(landscape, engine, (20, 5))
+    place_church(landscape, engine, (40, 35))
+
+    refectory = ('''\
+        quuuuuw
+        x.....x
+        x.....x
+        x.....x
+        euu.uur
+        ''')
+    place_building(landscape, refectory, engine, (50, 25))
+
+    dormitory = ('''\
+        quu.uuw
+        x.....xx
+        x......x
+        x......x
+        x.....xx
+        euuuuur
+        ''')
+    place_building(landscape, dormitory, engine, (47, 44))
 
     # Save this version of the map so effects can happen to it over the course of the game
     save_original_colours(landscape)
 
+    cloister_size = 14
+    place_cloister(landscape, (map_center[0] - (cloister_size // 2), map_center[1] - (cloister_size // 2)), cloister_size)
+
     # Temp to test entity factories
-    engine.player.place(int(map_width / 2), int(map_height / 2), landscape)
+    engine.player.place(map_center[0], map_center[1], landscape)
 
     return landscape
 
@@ -318,9 +343,9 @@ def place_church(landscape, engine, position: Tuple[int, int]):
          quw
         qroew
         xh.hx
-        xh.hx
-        xh.hx
-        eu.ur
+        xh...
+        xhhhx
+        euuur
         ''')
 
     smaller_church = ('''\
@@ -412,7 +437,51 @@ def place_church(landscape, engine, position: Tuple[int, int]):
     wall_jobs = list()
     floor_jobs = list()
     prop_jobs = list()
-    for character in smaller_church:
+    for character in tiny_church:
+        if character is not ' ' and character is not "\n" and character is not "\r":
+
+            job = None
+            if character is 'x' or character is 'u' or character is 'e' or character is 'r' or character is 'q' or character is 'w':
+                locations = utility.get_vonneumann_tiles([x, y])
+                completion_action = CreateWallAction(landscape.engine.player, [x, y])
+                job = Job(locations, 1, completion_action, None, None, "Build Wall")
+                wall_jobs.append(job)
+            elif character is 'o':
+                completion_action = CreatePropAction(landscape.engine.player, entity_factories.stone_pillar, [x, y])
+                job = Job([[x, y]], 1, completion_action, None, None, "Create Prop")
+                prop_jobs.append(job)
+            else:
+                completion_action = CreateFloorAction(landscape.engine.player, [x, y])
+                job = Job([[x, y]], 1, completion_action, None, None, "Build Floor")
+                floor_jobs.append(job)
+
+            # landscape.tiles[x, y]["graphic"]["ch"] = ord(' ')
+
+        if character is "\n" or character is "\r":
+            x = position[0]
+            y += 1
+        else:
+            x += 1
+
+    for j in wall_jobs:
+        if j is not None:
+            engine.jobs.queue.put(j)
+
+    for j in prop_jobs:
+        if j is not None:
+            engine.jobs.queue.put(j)
+
+    for j in floor_jobs:
+        if j is not None:
+            engine.jobs.queue.put(j)
+
+
+def place_building(landscape, building, engine, position: Tuple[int, int]):
+    x, y = position[0], position[1]
+    wall_jobs = list()
+    floor_jobs = list()
+    prop_jobs = list()
+    for character in building:
         if character is not ' ' and character is not "\n" and character is not "\r":
 
             job = None
@@ -494,3 +563,15 @@ def draw_rectangle(landscape, center, width, height, colour: Tuple[int, int, int
             landscape.tiles[x, y]["graphic"]["bg"] = colour
             landscape.tiles[x, y]["graphic"]["ch"] = character
             landscape.tiles[x, y]["wearable"] = False
+
+
+def place_cloister(landscape, start: Tuple[int, int], size):
+    room_tiles = []
+    for x in range(0, size):
+        for y in range(0, size):
+            if (x >= 2 and x < size - 2) and (y >= 2 and y < size - 2):
+                entity_factories.cloister_grass.spawn(landscape, start[0] + x, start[1] + y)
+            else:
+                room_tiles.append((start[0] + x, start[1] + y))
+
+    landscape.room_holder.add_room(RoomType.CLOISTER, room_tiles)

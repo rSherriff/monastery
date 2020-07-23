@@ -10,6 +10,7 @@ import utility
 from game_map import Neighbourhood
 from entity import EntityID
 from rooms import Rooms, RoomType
+from jobs import Job
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -76,7 +77,7 @@ class MovementAction(ActionWithDirection):
             print(f"{self.entity.name}'s destination blocked by tile!")
             return  # Destination is blocked by a tile.
         if self.engine.game_map.get_blocking_entity_at_location(dest_x, dest_y):
-            print(f"{self.entity.name} destination blocked by {blocking_entity.name}!")
+            print(f"{self.entity.name} destination blocked by an entity!")
             return  # Destination is blocked by an entity.
 
         self.entity.move(self.dx, self.dy)
@@ -222,17 +223,25 @@ class ChangeMouseDesiredAction(Action):
 
 
 class CreateRoomAction(Action):
-    def __init__(self, entity: Entity, room_type: RoomType, point: Tuple[int, int], width: int, height: int) -> None:
+    def __init__(self, entity: Entity, room_type: RoomType, tiles: list) -> None:
         super().__init__(entity)
         self.room_type = room_type
-        self.point = point
-        self.width = width
-        self.height = height
+        self.tiles = tiles
 
     def perform(self):
-        self.engine.game_map.rooms.add_room(self.room_type, self.point, self.width, self.height)
+        self.engine.game_map.room_holder.add_room(self.room_type, self.tiles)
 
-# Not actually tested!
+
+class GoToServiceAction(Action):
+    def __init__(self, entity: Entity) -> None:
+        super().__init__(entity)
+
+    def perform(self):
+        quire = self.entity.gamemap.room_holder.get_room(RoomType.QUIRE)
+        if quire is not None:
+            self.entity.schedule.jobs.append(Job([quire.get_random_point_in_room()], 1, None, None, None, "Service"))
+
+ # Not actually tested!
 
 
 class RemovePropAction(Action):

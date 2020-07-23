@@ -32,11 +32,11 @@ def new_tile(
     walkable: int,
     transparent: int,
     graphic: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
-    wearable: bool
+    wearable: bool,
+    cost: int,
 ) -> np.ndarray:
     """Helper function for defining individual tile types """
     wear = 1
-    cost = 0
     return np.array((walkable, transparent, wearable, wear, graphic, graphic[2], cost), dtype=tile_dt)
 
 
@@ -48,18 +48,5 @@ floor = new_tile(
     transparent=True,
     wearable=True,
     graphic=(ord(" "), (255, 255, 255), colours.GRASS_GREEN),
-)
-
-stone_floor = new_tile(
-    walkable=True,
-    transparent=True,
-    wearable=False,
-    graphic=(ord(" "), (255, 255, 255), colours.GREY),
-)
-
-wall = new_tile(
-    walkable=True,
-    transparent=False,
-    wearable=True,
-    graphic=(ord(" "), colours.WALL_FG, colours.WALL_BG),
+    cost=0
 )

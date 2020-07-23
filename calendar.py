@@ -7,6 +7,8 @@ from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 from tcod.console import Console
 from render_functions import render_message_box
 from actions import Action, CreateJobAction
+from rooms import RoomType, Rooms
+from datetime import datetime, timedelta
 
 from entity import Actor
 import tcod
@@ -18,68 +20,34 @@ if TYPE_CHECKING:
     from engine import Engine
     from entity import Entity
 
-"""
-Class for representing the passage of time.
-Time is broken down in month -> day -> time
-time increases by one minute every tick
-"""
-
 
 class Calendar:
+    """
+    Class for representing the passage of time.
+
+    Time is broken down in month -> day -> time
+    """
+
     def __init__(self, engine: Engine):
         self.engine = engine
-        self.month = "Tempuary"
-        self.day = 1
-        self.hour = 1
-        self.minute = 0
-
-        self.events = list()
-
-        self.setup_events()
+        self.date_time = datetime(year=600, month=1, day=1)
+        self.date_time_tick = timedelta(minutes=1)
 
     def update(self):
-        self.minute += 1
-        if self.minute is 60:
-            self.minute = 0
-            self.hour += 1
-            if self.hour is 24:
-                self.hour = 0
-                self.day += 1
+        self.date_time += self.date_time_tick
 
     def render(self, console: Console):
-        date_string = f'{self.month} - {self.day} - {self.hour:02d}:{self.minute:02d}'
-        console.print(x=3, y=1, string=date_string)
+        console.print(x=3, y=1, string=self.date_time.strftime("%A, %d. %B %Y %I:%M%p"))
 
+        """
         for event in self.events:
-            if self.hour is event[1][0] and event[1][1] <= self.minute <= event[1][1] + 20:
+            if self.hour is event[2][0] and event[2][1] <= self.minute <= event[2][1] + 20:
                 render_message_box(console, event[0])
-            if self.hour is event[1][0] and self.minute is event[1][1]:
-                job = jobs.Job((29, 8), 1)
-                self.engine.jobs.queue.put(job)
-                job = jobs.Job((29, 9), 1)
-                self.engine.jobs.queue.put(job)
-                job = jobs.Job((33, 8), 1)
-                self.engine.jobs.queue.put(job)
-                job = jobs.Job((33, 9), 1)
-                self.engine.jobs.queue.put(job)
-                job = jobs.Job((33, 9), 1)
-                self.engine.jobs.queue.put(job)
-                job = jobs.Job((33, 9), 1)
-                self.engine.jobs.queue.put(job)
-            elif self.hour is event[1][0] and self.minute == event[1][1] + 30:
+            if self.hour is event[2][0] and self.minute is event[2][1]:
                 for i in range(0, 6):
-                    position = (int(random.random() * self.engine.map_width - 1), int(random.random() * self.engine.map_height - 1))
-                    job = jobs.Job(position, 1)
-                    self.engine.jobs.queue.put(job)
-                    pass
-
-    def setup_events(self):
-        self.events.append(("Vigil", (2, 0), ()))
-        self.events.append(("Matins", (3, 0)))
-        self.events.append(("Lauds", (5, 0)))
-        self.events.append(("Prime", (6, 0)))
-        self.events.append(("Terce", (9, 0)))
-        self.events.append(("Sext", (12, 0)))
-        self.events.append(("Nones", (15, 0)))
-        self.events.append(("Vespers", (18, 0)))
-        self.events.append(("Compline", (19, 0)))
+                    room = self.engine.game_map.room_holder.get_room(event[1])
+                    if room is not None:
+                        position = room.get_random_point_in_room()
+                        job = jobs.Job([position], 30, None, None, None, event[0])
+                        self.engine.jobs.queue.put(job)
+        """

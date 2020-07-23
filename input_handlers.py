@@ -152,7 +152,8 @@ class MainGameEventHandler(EventHandler):
                         actions.append(CreateJobAction(player, job))
 
                 if self.mouse_action is MouseDesiredAction.PLACE_ROOM:
-                    self.engine.event_handler = RoomPlacer(self.engine, self.highlight_tiles)
+                    map_highlight_tiles = list(map(lambda x: self.screen_space_to_map_space(x[0], x[1]), self.highlight_tiles))
+                    self.engine.event_handler = RoomPlacer(self.engine, map_highlight_tiles)
 
             self.mouse_action = MouseDesiredAction.NONE
 
@@ -306,12 +307,12 @@ class PropPlacer(EventHandler):
         )
         y = 2
         count = 0
-        for prop in rooms.placeable_props:
+        for prop in entity_factories.placeable_props:
             temp_console.print(x=2, y=y, string=prop.name, fg=colours.RED if count is self.selection else colours.WHITE)
             y += 1
             count += 1
 
-        temp_console.blit(console, int(console.width / 2) - int(temp_console.width / 2), int(console.height / 2) - int(temp_console.height / 2))
+        temp_console.blit(console, console.width // 2 - temp_console.width // 2, console.height // 2 - temp_console.height // 2)
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> None:
         actions = []
@@ -377,7 +378,7 @@ class RoomPlacer(EventHandler):
         if event.sym in CURSOR_Y_KEYS:
             self.selection = max(0, min(self.selection + CURSOR_Y_KEYS[event.sym], len(get_room_types()) - 1))
         elif event.sym == tcod.event.K_RETURN:
-            action = CreateRoomAction(self.engine.player, get_room_types()[self.selection], self.room_tiles[0], utility.box_width(self.room_tiles), utility.box_height(self.room_tiles))
+            action = CreateRoomAction(self.engine.player, get_room_types()[self.selection], self.room_tiles)
             actions.append(action)
             self.shutting_down = True
         else:

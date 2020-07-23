@@ -7,7 +7,6 @@ from tcod.console import Console
 from actions import EscapeAction, MovementAction
 from input_handlers import MainGameEventHandler
 from message_log import MessageLog
-from render_functions import render_bar, render_names_at_mouse_location, render_map_mouse_location, render_rooms_at_mouse_location
 from jobs import Jobs
 from calendar import Calendar
 from monastery import Monastery
@@ -28,7 +27,7 @@ class Engine:
     game_map: GameMap
 
     def __init__(self, player: Actor, map_width, map_height):
-        # Setting up all the systems that will run during the game. These systems depend on each other so order is very important!
+        """ Setting up all the systems that will run during the game. These systems depend on each other so order is very important! """
         self.player = player
         self.map_height = map_height
         self.map_width = map_width
@@ -45,6 +44,7 @@ class Engine:
         self.ui = UI(self)
 
     def render(self, console: Console) -> None:
+        """ Renders the game to console. """
         console.tiles_rgb[self.map_x_offset: self.map_width + self.map_x_offset, self.map_y_offset: self.map_height + self.map_y_offset] = self.game_map.tiles["graphic"]
 
         entity_console = Console(console.width, console.height)
@@ -59,18 +59,14 @@ class Engine:
         self.calendar.render(console)
         self.ui.render(console)
 
-        render_map_mouse_location(console=console, x=20, y=self.map_height + self.map_y_offset + 1, engine=self)
-        render_names_at_mouse_location(console=console, x=20, y=self.map_height + self.map_y_offset, engine=self)
-        render_rooms_at_mouse_location(console=console, x=30, y=self.map_height + self.map_y_offset, engine=self)
-
     def update(self):
-        # self.calendar.update()
+        """ Engine update tick """
+        self.calendar.update()
         self.game_map.update()
         for entity in self.game_map.entities - {self.player}:
-            if isinstance(entity, Actor) and entity.ai:
-                entity.ai.perform()
-
             entity.update()
 
     def is_mouse_in_map(self) -> bool:
+        """ Is the mouse inside the bounds of the map """
+        # This should perhaps move
         return self.map_x_offset <= self.mouse_location[0] < self.map_x_offset + self.game_map.width and self.map_y_offset <= self.mouse_location[1] < self.map_y_offset + self.game_map.height

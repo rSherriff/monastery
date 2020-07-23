@@ -9,6 +9,7 @@ import random
 
 from actions import Action, MovementAction, WaitAction
 from components.base_component import BaseComponent
+from rooms import RoomType, Room
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -101,7 +102,11 @@ class Brother(BaseAI):
     def __init__(self, entity: Actor):
         super().__init__(entity)
         self.path: List[Tuple[int, int]] = []
-        self.job = None
+
+        self.passive_job = None
+        self.active_job = None
+        self.current_job = None
+
         self.selected_job_location = 0
 
     def perform(self) -> None:
@@ -127,31 +132,37 @@ class Brother(BaseAI):
 
         """
         # If we have a job then try and go do it
-        if self.job is not None:
+        if self.current_job is not None:
 
-            # print(f"{self.entity.name} has a job at {self.job.location}")
+                # print(f"{self.entity.name} has a job at {self.job.location}")
 
-            # if desires tell me to stop the job
-            # job = None
+                # if desires tell me to stop the job
+                # job = None
 
-            if(self.selected_job_location >= len(self.job.locations)):
-                print(f"Error: Trying to go to location {self.selected_job_location} for job {self.job.name} but it only has {len(self.job.locations)} locations.")
+            if(self.selected_job_location >= len(self.current_job.locations)):
+                print(f"Error: Trying to go to location {self.selected_job_location} for job {self.current_job.name} but it only has {len(current_job.locations)} locations.")
                 return
 
-            dx = self.job.locations[self.selected_job_location][0] - self.entity.x
-            dy = self.job.locations[self.selected_job_location][1] - self.entity.y
+            dx = self.current_job.locations[self.selected_job_location][0] - self.entity.x
+            dy = self.current_job.locations[self.selected_job_location][1] - self.entity.y
             distance = max(abs(dx), abs(dy))  # Chebyshev distance.
 
             if distance is 0:
                 # If we are at the job location perform the job
                 # print(f"{self.entity.name} is working on a job at {self.job.location}")
                 # Temp amount of work
-                self.job.work_on(self, 1)
-                if self.job.completed:
-                    self.job = None
+                self.current_job.work_on(self, 1)
+                if self.current_job.completed:
+                    print(f"Completed job + {self.current_job.name}")
+                    if self.is_assigned_passive_job():
+                        self.passive_job = None
+                    elif self.is_assigned_active_job():
+                        self.active_job = None
+
+                    self.current_job = None
                     return
             else:                # else move towards the job location
-                self.path = self.get_path_to(self.job.locations[self.selected_job_location][0], self.job.locations[self.selected_job_location][1])
+                self.path = self.get_path_to(self.current_job.locations[self.selected_job_location][0], self.current_job.locations[self.selected_job_location][1])
 
                 if self.path:
                     dest_x, dest_y = self.path.pop(0)
@@ -161,26 +172,46 @@ class Brother(BaseAI):
                 else:
                     # If we can't reach where we need to be to perform this job, pick another of its work locations (not worrying about distance)
                     self.selected_job_location += 1
-                    if self.selected_job_location >= len(self.job.locations):
+                    if self.selected_job_location >= len(self.current_job.locations):
                         # print(f"{self.entity.name} cannot find a route to job {self.job.name}")
                         self.selected_job_location = 0
         else:
             # Try to get a new job! (been there fella!!!!!!!)
-            self.get_job_from_queue()
+            self.get_next_job()
 
-        if self.job is None:
-            return
-            point_in_map = [[int(max(0, min(random.random() * self.engine.map_width, self.engine.map_width))), int(max(0, min(random.random() * self.engine.map_height, self.engine.map_height)))]]
-            job = Job(point_in_map, 1, None, None, None, "Idle")
-            self.selected_job_location = 0
-            self.job = job
-
-        pass
-
-    def get_job_from_queue(self):
-        if not self.engine.jobs.queue.empty():
-            self.job = self.engine.jobs.queue.get()
-            if self.job is not None:
-                # Sort the job locations by distance relative to me
-                self.job.sort_locations_for_distance([self.entity.x, self.entity.y])
+        if self.current_job is None:
+            if random.random() < 1.2:
+                cloister = self.engine.game_map.room_holder.get_room(RoomType.CLOISTER)
+                if cloister is not None:
+                    position = cloister.get_random_point_in_room()
+                    job = Job([position], 1, None, None, None, "Idle")
+                    self.engine.jobs.queue.put(job)
+                else:
+                    print("No Cloister!")
+            else:
+                job = Job([[self.entity.x, self.entity.y]], 60, None, None, None, "Idle")
                 self.selected_job_location = 0
+                self.job = job
+
+    def is_assigned_passive_job(self):
+        return self.current_job is self.passive_job
+
+    def is_assigned_active_job(self):
+        return self.current_job is self.active_job
+
+    def get_next_job(self):
+        if len(self.entity.schedule.jobs) > 0 and self.passive_job is None:
+            self.passive_job = self.entity.schedule.jobs.popleft()
+
+        if not self.engine.jobs.queue.empty() and self.active_job is None:
+            self.active_job = self.engine.jobs.queue.get()
+
+        if self.passive_job is not None:
+            self.current_job = self.passive_job
+        elif self.active_job is not None:
+            self.current_job = self.active_job
+
+        if self.current_job is not None:
+            # Sort the job locations by distance relative to me
+            self.current_job.sort_locations_for_distance([self.entity.x, self.entity.y])
+            self.selected_job_location = 0

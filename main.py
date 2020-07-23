@@ -7,7 +7,7 @@ import colours
 
 from engine import Engine
 from game_map import GameMap
-from render_functions import render_fps_counter
+from render_functions import render_names_at_mouse_location, render_map_mouse_location, render_rooms_at_mouse_location, render_fps_counter
 
 
 def main() -> None:
@@ -46,7 +46,13 @@ def main() -> None:
 
             root_console.clear()
             engine.event_handler.on_render(console=root_console)
-            render_fps_counter(console=root_console, x=90, y=1, fps=fps)
+
+            # Debug render functions
+            render_fps_counter(console=root_console, x=50, y=3, fps=fps)
+            render_map_mouse_location(console=root_console, x=5, y=50, engine=engine)
+            render_names_at_mouse_location(console=root_console, x=5, y=5, engine=engine)
+            render_rooms_at_mouse_location(console=root_console, x=5, y=6, engine=engine)
+
             context.present(root_console)
 
             engine.event_handler.handle_events(context)
@@ -63,7 +69,7 @@ def main() -> None:
                 time_sum = 0
 
             tick_length = 0.1
-            #time.sleep(tick_length - (tic - toc))
+            time.sleep(tick_length - (tic - toc))
 
 
 if __name__ == "__main__":
