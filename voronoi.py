@@ -1,4 +1,4 @@
-from matplotlib.path import Path
+
 from typing import Tuple
 import numpy as np
 import scipy as sp
