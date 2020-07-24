@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional, TYPE_CHECKING, Tuple
 from actions import Action, EscapeAction, MovementAction, CreateJobAction, CreatePropAction, CreateWallAction, CreateFloorAction, CreateRoomAction
 from enum import auto, Enum
-from jobs import Job
+from jobs import JobEffort
 from highlight import Highlight
 from rooms import get_room_types, get_room_name
 
@@ -141,13 +141,13 @@ class MainGameEventHandler(EventHandler):
                     if self.mouse_action is MouseDesiredAction.BUILD_WALL:
                         locations = utility.get_vonneumann_tiles([x, y])
                         completion_action = CreateWallAction(self.engine.player, [x, y])
-                        job = Job(locations, 1, completion_action, None, None, "Build Wall")
+                        job = JobEffort(locations, 1, completion_action, None, None, "Build Wall")
 
                         actions.append(CreateJobAction(player, job))
 
                     if self.mouse_action is MouseDesiredAction.BUILD_FLOOR:
                         completion_action = CreateFloorAction(self.engine.player, [x, y])
-                        job = Job([[x, y]], 1, completion_action, None, None, "Build Floor")
+                        job = JobEffort([[x, y]], 1, completion_action, None, None, "Build Floor")
 
                         actions.append(CreateJobAction(player, job))
 
@@ -322,7 +322,7 @@ class PropPlacer(EventHandler):
             self.selection = max(0, min(self.selection + CURSOR_Y_KEYS[event.sym], len(entity_factories.placeable_props) - 1))
         elif event.sym == tcod.event.K_RETURN:
             completion_action = CreatePropAction(self.engine.player, entity_factories.placeable_props[self.selection], self.position)
-            job = Job([self.position], 1, completion_action, None, None, "Create Prop")
+            job = JobEffort([self.position], 1, completion_action, None, None, "Create Prop")
             actions.append(CreateJobAction(player, job))
             self.shutting_down = True
         else:

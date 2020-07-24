@@ -10,7 +10,7 @@ import tile_types
 import utility
 from entity import Actor
 from actions import CreateWallAction, CreateFloorAction, CreatePropAction, CreateJobAction
-from jobs import Job
+from jobs import JobEffort
 from rooms import RoomType
 
 if TYPE_CHECKING:
@@ -444,15 +444,15 @@ def place_church(landscape, engine, position: Tuple[int, int]):
             if character is 'x' or character is 'u' or character is 'e' or character is 'r' or character is 'q' or character is 'w':
                 locations = utility.get_vonneumann_tiles([x, y])
                 completion_action = CreateWallAction(landscape.engine.player, [x, y])
-                job = Job(locations, 1, completion_action, None, None, "Build Wall")
+                job = JobEffort(locations, 1, completion_action, None, None, "Build Wall")
                 wall_jobs.append(job)
             elif character is 'o':
                 completion_action = CreatePropAction(landscape.engine.player, entity_factories.stone_pillar, [x, y])
-                job = Job([[x, y]], 1, completion_action, None, None, "Create Prop")
+                job = JobEffort([[x, y]], 1, completion_action, None, None, "Create Prop")
                 prop_jobs.append(job)
             else:
                 completion_action = CreateFloorAction(landscape.engine.player, [x, y])
-                job = Job([[x, y]], 1, completion_action, None, None, "Build Floor")
+                job = JobEffort([[x, y]], 1, completion_action, None, None, "Build Floor")
                 floor_jobs.append(job)
 
             # landscape.tiles[x, y]["graphic"]["ch"] = ord(' ')
@@ -488,15 +488,15 @@ def place_building(landscape, building, engine, position: Tuple[int, int]):
             if character is 'x' or character is 'u' or character is 'e' or character is 'r' or character is 'q' or character is 'w':
                 locations = utility.get_vonneumann_tiles([x, y])
                 completion_action = CreateWallAction(landscape.engine.player, [x, y])
-                job = Job(locations, 1, completion_action, None, None, "Build Wall")
+                job = JobEffort(locations, 1, completion_action, None, None, "Build Wall")
                 wall_jobs.append(job)
             elif character is 'o':
                 completion_action = CreatePropAction(landscape.engine.player, entity_factories.stone_pillar, [x, y])
-                job = Job([[x, y]], 1, completion_action, None, None, "Create Prop")
+                job = JobEffort([[x, y]], 1, completion_action, None, None, "Create Prop")
                 prop_jobs.append(job)
             else:
                 completion_action = CreateFloorAction(landscape.engine.player, [x, y])
-                job = Job([[x, y]], 1, completion_action, None, None, "Build Floor")
+                job = JobEffort([[x, y]], 1, completion_action, None, None, "Build Floor")
                 floor_jobs.append(job)
 
             # landscape.tiles[x, y]["graphic"]["ch"] = ord(' ')

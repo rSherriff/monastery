@@ -55,7 +55,6 @@ def box_width(tiles):
     index = 0
     while start_y is curr_y:
         start_y = tiles[index][1]
-        print(start_y)
         index += 1
 
     return index

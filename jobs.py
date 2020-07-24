@@ -5,6 +5,7 @@ import tile_types
 
 from typing import Iterable, Iterator, Optional, TYPE_CHECKING, Tuple
 from tcod.console import Console
+from datetime import datetime
 
 from entity import Actor
 import tcod
@@ -16,12 +17,11 @@ if TYPE_CHECKING:
     from action import Action
 
 
-class Job:
+class BaseJob:
     """Class representing a job that some actor is going to go do."""
 
-    def __init__(self, locations: list(Tuple[int, int]), work: float, completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
+    def __init__(self, locations: list(Tuple[int, int]), completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
         self.locations = locations
-        self.work = work
         self.completed = False
         self.name = name
         self.in_progress = False
@@ -31,16 +31,8 @@ class Job:
         self.cancelAction = cancelAction
         self.startAction = startAction
 
-    def work_on(self, worker: Entity, work_amount: float):
-        """Do some amount of work to the job. If the job is down then complete."""
-        self.worker = worker
-
-        if not self.in_progress:
-            self.start()
-
-        self.work -= work_amount
-        if self.work <= 0:
-            self.complete()
+    def update(self):
+        pass
 
     def complete(self):
         """Mark self as completed and trigger completion event."""
@@ -70,6 +62,40 @@ class Job:
         dx = pointA[0] - pointB[0]
         dy = pointA[1] - pointB[1]
         return max(abs(dx), abs(dy))  # Chebyshev distance.
+
+
+class JobEffort(BaseJob):
+
+    def __init__(self, locations: list(Tuple[int, int]), work: float, completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
+        super().__init__(locations, completionAction, cancelAction, startAction, name)
+        self.work = work
+
+    def update(self, worker: Actor):
+        """Do some amount of work to the job. If the job is down then complete."""
+        self.worker = worker
+
+        if not self.in_progress:
+            self.start()
+
+        self.work -= worker.get_effort()
+        if self.work <= 0:
+            self.complete()
+
+class JobUntil(BaseJob):
+
+    def __init__(self, locations: list(Tuple[int, int]), finish_time: datetime, completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
+        super().__init__(locations, completionAction, cancelAction, startAction, name)
+        self.finish_time = finish_time
+
+    def update(self, worker: Actor):
+        """Do some amount of work to the job. If the job is down then complete."""
+        self.worker = worker
+
+        if not self.in_progress:
+            self.start()
+
+        if self.worker.gamemap.engine.calendar.get_current_date_time() > self.finish_time:
+            self.complete()
 
 
 class Jobs:

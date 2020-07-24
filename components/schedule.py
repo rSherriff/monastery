@@ -70,7 +70,7 @@ class BrotherSchedule(BaseSchedule):
     def __init__(self, actor: Actor):
         super().__init__(actor)
 
-        self.add_event("Vigil", GoToServiceAction(actor), datetime(1, 1, 1, hour=2))
+        self.add_event("Vigil", GoToServiceAction(actor, timedelta(hours=2)), datetime(1, 1, 1, hour=2))
         self.add_event("Lauds", None, datetime(1, 1, 1, hour=3))
         self.add_event("Lauds", None, datetime(1, 1, 1, hour=5))
         self.add_event("Prime", None, datetime(1, 1, 1, hour=6))

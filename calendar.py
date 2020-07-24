@@ -39,6 +39,9 @@ class Calendar:
     def render(self, console: Console):
         console.print(x=3, y=1, string=self.date_time.strftime("%A, %d. %B %Y %I:%M%p"))
 
+    def get_current_date_time(self):
+        return self.date_time
+
         """
         for event in self.events:
             if self.hour is event[2][0] and event[2][1] <= self.minute <= event[2][1] + 20:

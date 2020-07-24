@@ -146,6 +146,10 @@ class Actor(Entity):
         if self.ai:
             self.ai.perform()
 
+    def get_effort(self):
+        # TODO: Return effort based on the job and the actors abilities
+        return 1
+
 
 class Prop(Entity):
     def __init__(

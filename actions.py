@@ -4,13 +4,13 @@ from typing import Optional, Tuple, TYPE_CHECKING
 
 import colours
 import random
-import jobs
 import entity_factories
 import utility
 from game_map import Neighbourhood
 from entity import EntityID
 from rooms import Rooms, RoomType
-from jobs import Job
+from jobs import JobEffort, JobUntil
+from datetime import datetime, timedelta
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -233,13 +233,16 @@ class CreateRoomAction(Action):
 
 
 class GoToServiceAction(Action):
-    def __init__(self, entity: Entity) -> None:
+    def __init__(self, entity: Entity, duration: timedelta) -> None:
         super().__init__(entity)
+        self.duration = duration
 
     def perform(self):
         quire = self.entity.gamemap.room_holder.get_room(RoomType.QUIRE)
         if quire is not None:
-            self.entity.schedule.jobs.append(Job([quire.get_random_point_in_room()], 1, None, None, None, "Service"))
+            finish_time = self.engine.calendar.get_current_date_time() + self.duration
+            print(finish_time)
+            self.entity.schedule.jobs.append(JobUntil([quire.get_random_point_in_room()], finish_time, None, None, None, "Service"))
 
  # Not actually tested!
 

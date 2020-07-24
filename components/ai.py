@@ -4,7 +4,7 @@ from typing import List, Tuple, TYPE_CHECKING
 
 import numpy as np  # type: ignore
 import tcod
-from jobs import Job
+from jobs import JobEffort
 import random
 
 from actions import Action, MovementAction, WaitAction
@@ -131,6 +131,9 @@ class Brother(BaseAI):
             idle
 
         """
+        if self.passive_job_waiting():
+            self.get_next_job()
+
         # If we have a job then try and go do it
         if self.current_job is not None:
 
@@ -150,8 +153,8 @@ class Brother(BaseAI):
             if distance is 0:
                 # If we are at the job location perform the job
                 # print(f"{self.entity.name} is working on a job at {self.job.location}")
-                # Temp amount of work
-                self.current_job.work_on(self, 1)
+
+                self.current_job.update(self.entity)
                 if self.current_job.completed:
                     print(f"Completed job + {self.current_job.name}")
                     if self.is_assigned_passive_job():
@@ -184,12 +187,12 @@ class Brother(BaseAI):
                 cloister = self.engine.game_map.room_holder.get_room(RoomType.CLOISTER)
                 if cloister is not None:
                     position = cloister.get_random_point_in_room()
-                    job = Job([position], 1, None, None, None, "Idle")
+                    job = JobEffort([position], 1, None, None, None, "Idle")
                     self.engine.jobs.queue.put(job)
                 else:
                     print("No Cloister!")
             else:
-                job = Job([[self.entity.x, self.entity.y]], 60, None, None, None, "Idle")
+                job = JobEffort([[self.entity.x, self.entity.y]], 60, None, None, None, "Idle")
                 self.selected_job_location = 0
                 self.job = job
 
@@ -200,7 +203,7 @@ class Brother(BaseAI):
         return self.current_job is self.active_job
 
     def get_next_job(self):
-        if len(self.entity.schedule.jobs) > 0 and self.passive_job is None:
+        if self.passive_job_waiting():
             self.passive_job = self.entity.schedule.jobs.popleft()
 
         if not self.engine.jobs.queue.empty() and self.active_job is None:
@@ -215,3 +218,6 @@ class Brother(BaseAI):
             # Sort the job locations by distance relative to me
             self.current_job.sort_locations_for_distance([self.entity.x, self.entity.y])
             self.selected_job_location = 0
+
+    def passive_job_waiting(self):
+        return len(self.entity.schedule.jobs) > 0 and self.passive_job is None
