@@ -9,7 +9,7 @@ import utility
 from game_map import Neighbourhood
 from entity import EntityID
 from rooms import Rooms, RoomType
-from jobs import JobEffort, JobUntil
+from jobs import JobEffort, JobUntil, JobCondition
 from datetime import datetime, timedelta
 
 if TYPE_CHECKING:
@@ -241,8 +241,29 @@ class GoToServiceAction(Action):
         quire = self.entity.gamemap.room_holder.get_room(RoomType.QUIRE)
         if quire is not None:
             finish_time = self.engine.calendar.get_current_date_time() + self.duration
-            print(finish_time)
             self.entity.schedule.jobs.append(JobUntil([quire.get_random_point_in_room()], finish_time, None, None, None, "Service"))
+        else:
+            print(f"Tried to make {self.entity.name} got to service, but no quire exists!")
+
+
+class GoToMealAction(Action):
+    def __init__(self, entity: Entity) -> None:
+        super().__init__(entity)
+
+    def perform(self):
+        refectory = self.entity.gamemap.room_holder.get_room(RoomType.REFECTORY)
+        if refectory is not None:
+            self.entity.schedule.jobs.append(JobActorCondition([refectory.get_random_point_in_room()], lambda x: x.animal.hunger > 0, None, None, None, "Meal"))  # TODO Make a better wants_food type function
+
+
+class GoToBedAction(Action):
+    def __init__(self, entity: Entity) -> None:
+        super().__init__(entity)
+
+    def perform(self):
+        dorm = self.entity.gamemap.room_holder.get_room(RoomType.DORMITORY)
+        if dorm is not None:
+            self.entity.schedule.jobs.append(JobActorCondition([dorm.get_random_point_in_room()], lambda x: x.animal.energy > 0, None, None, None, "Sleep"))  # TODO Make a better wants_sleep type function
 
  # Not actually tested!
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 from datetime import datetime, timedelta, time
 from components.base_component import BaseComponent
-from actions import Action, GoToServiceAction
+from actions import Action, GoToServiceAction, GoToMealAction
 from calendar import Calendar
 from rooms import Rooms, RoomType, Room
 
@@ -70,14 +70,14 @@ class BrotherSchedule(BaseSchedule):
     def __init__(self, actor: Actor):
         super().__init__(actor)
 
-        self.add_event("Vigil", GoToServiceAction(actor, timedelta(hours=2)), datetime(1, 1, 1, hour=2))
-        self.add_event("Lauds", None, datetime(1, 1, 1, hour=3))
-        self.add_event("Lauds", None, datetime(1, 1, 1, hour=5))
-        self.add_event("Prime", None, datetime(1, 1, 1, hour=6))
-        self.add_event("Terce", None, datetime(1, 1, 1, hour=9))
-        self.add_event("Sext", None, datetime(1, 1, 1, hour=12))
-        self.add_event("Lunch", None, datetime(1, 1, 1, hour=13))
-        self.add_event("Nones", None, datetime(1, 1, 1, hour=15))
-        self.add_event("Vespers", None, datetime(1, 1, 1, hour=18))
-        self.add_event("Compline", None, datetime(1, 1, 1, hour=19))
+        self.add_event("Vigil", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=2))
+        self.add_event("Lauds", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=3))
+        self.add_event("Lauds", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=5))
+        self.add_event("Prime", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=6))
+        self.add_event("Terce", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=9))
+        self.add_event("Sext", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=12))
+        self.add_event("Lunch", GoToMealAction(actor), datetime(1, 1, 1, hour=13))
+        self.add_event("Nones", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=15))
+        self.add_event("Vespers", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=18))
+        self.add_event("Compline", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=19))
         self.add_event("Bedtime", None, datetime(1, 1, 1, hour=20))

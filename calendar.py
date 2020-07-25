@@ -30,7 +30,7 @@ class Calendar:
 
     def __init__(self, engine: Engine):
         self.engine = engine
-        self.date_time = datetime(year=600, month=1, day=1)
+        self.date_time = datetime(year=600, month=1, day=1, hour=12)
         self.date_time_tick = timedelta(minutes=1)
 
     def update(self):

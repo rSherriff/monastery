@@ -98,6 +98,21 @@ class JobUntil(BaseJob):
             self.complete()
 
 
+class JobActorCondition(BaseJob):
+    def __init__(self, locations: list(Tuple[int, int]), finish_condition, completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
+        super().__init__(locations, completionAction, cancelAction, startAction, name)
+        self.condition = finish_condition
+
+    def update(self, worker: Actor):
+        self.worker = worker
+
+        if not self.in_progress:
+            self.start()
+
+        if self.condition(self.worker):
+            self.complete()
+
+
 class Jobs:
     """Container of all jobs. Different queues for different types of jobs."""
 
