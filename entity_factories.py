@@ -4,6 +4,7 @@ from components.ai import MoveToPlayer
 from components.ai import Brother
 from components.animal import Animal
 from components.schedule import BrotherSchedule, BaseSchedule
+from components.crop import Crop
 
 from entity import Actor
 from entity import Prop
@@ -101,7 +102,8 @@ field = Prop(
     name="Farm Field",
     weight=0,
     blocks_movement=False,
-    colours_bg=True
+    colours_bg=True,
+    physical_properties=[Crop],
 )
 
 placeable_props = [door, stone_pillar]

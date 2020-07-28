@@ -3,28 +3,16 @@ from __future__ import annotations
 import numpy as np  # type: ignore
 
 from typing import Iterable, Iterator, Optional, TYPE_CHECKING, Tuple
-from enum import auto, Enum
 from entity_holder import EntityHolder
 from rooms import Room, RoomType
 from actions import CreatePropAction, RemovePendingJobAction
 from jobs import JobEffort
+from components.crop import Crop, CropType
 
 import tcod
 import queue
 import random
 import entity_factories
-
-
-class CropType(Enum):
-    NONE = auto()
-    WHEAT = auto()
-
-    @classmethod
-    def get_crop_name(cls):
-        if cls is cls.NONE:
-            return ""
-        if cls is cls.WHEAT:
-            return "Wheat"
 
 
 class Farm(Room):

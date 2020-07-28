@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from components.ai import BaseAI
     from components.animal import Animal
     from components.schedule import BaseSchedule
+    from components.physical_property import PhysicalProperty
     from game_map import GameMap
 
 T = TypeVar("T", bound="Entity")
@@ -32,7 +33,7 @@ class Entity:
     A generic object to represent players, enemies, items, etc.
     """
 
-    # TODO: Change blocks movemnt to a cost, things that totally block change the tile beneath them
+    # TODO: Change blocks movemnt to a cost.
     gamemap: GameMap
 
     def __init__(
@@ -48,6 +49,7 @@ class Entity:
         name: str = "<unnamed>",
         blocks_movement: bool = False,
         render_order: RenderOrder = RenderOrder.CORPSE,
+        physical_properties: list = [],
         weight: int = 0
     ):
         self.id = id
@@ -65,6 +67,10 @@ class Entity:
             # If gamemap isn't provided now then it will be set later.
             self.gamemap = gamemap
             gamemap.entities.add(self)
+
+        self.physical_properties = []
+        for component in physical_properties:
+            self.physical_properties.append(component(self))
 
     def spawn(self: T, gamemap: GameMap, x: int, y: int) -> T:
         """Spawn a copy of this instance at the given location."""
@@ -100,7 +106,8 @@ class Entity:
             gamemap.entities.add(self)
 
     def update(self):
-        pass
+        for component in self.physical_properties:
+            component.perform()
 
     def is_type(self, id: entity_factories.EntityID):
         return self.id is id
@@ -122,6 +129,7 @@ class Actor(Entity):
         schedule_cls: Type[BaseSchedule],
         animal: Animal,
         weight: int = 0,
+        physical_properties: list = [],
     ):
         super().__init__(
             id=id,
@@ -134,7 +142,8 @@ class Actor(Entity):
             colours_bg=colours_bg,
             blocks_movement=False,
             render_order=RenderOrder.ACTOR,
-            weight=weight
+            weight=weight,
+            physical_properties=physical_properties
         )
 
         self.ai: Optional[BaseAI] = ai_cls(self)
@@ -149,6 +158,7 @@ class Actor(Entity):
         return bool(self.ai)
 
     def update(self):
+        super().update()
         if self.schedule:
             self.schedule.update()
 
@@ -174,6 +184,7 @@ class Prop(Entity):
         weight: int = 0,
         name: str = "<unnamed>",
         blocks_movement: bool = False,
+        physical_properties: list = [],
     ):
         super().__init__(
             id=id,
@@ -186,7 +197,8 @@ class Prop(Entity):
             name=name,
             blocks_movement=blocks_movement,
             render_order=RenderOrder.PROP,
-            weight=weight
+            weight=weight,
+            physical_properties=physical_properties
         )
 
     def spawn(self: T, gamemap: GameMap, x: int, y: int) -> T:
