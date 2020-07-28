@@ -67,10 +67,10 @@ cloister_grass = Prop(
 pending_job = Prop(
     id=EntityID.PENDING_JOB,
     char=".",
-    fg_colour=colours.WALL_FG,
+    fg_colour=colours.WHITE,
     name="Pending Job",
     weight=0,
-    blocks_movement=False
+    blocks_movement=False,
 )
 
 door = Prop(
@@ -89,6 +89,17 @@ stone_pillar = Prop(
     bg_colour=colours.GREY,
     name="Stone Pillar",
     weight=80,
+    blocks_movement=False,
+    colours_bg=True
+)
+
+field = Prop(
+    id=EntityID.FIELD,
+    char="~",
+    fg_colour=colours.DRY_MUD_BROWN,
+    bg_colour=colours.WET_MUD_BROWN,
+    name="Farm Field",
+    weight=0,
     blocks_movement=False,
     colours_bg=True
 )

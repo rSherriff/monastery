@@ -1,6 +1,11 @@
 from typing import Iterable, Iterator, Optional, TYPE_CHECKING, Tuple
-
+from enum import Enum, auto
 import tcod
+
+
+class Neighbourhood(Enum):
+    VON_NEUMANN = auto()
+    MOORE = auto()
 
 
 def get_vonneumann_tiles(position: Tuple[int, int]):

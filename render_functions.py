@@ -15,7 +15,7 @@ def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
         return ""
 
     names = ", ".join(
-        entity.name for entity in game_map.entities if entity.x == x and entity.y == y
+        entity.name for entity in game_map.all_entities if entity.x == x and entity.y == y
     )
 
     return names
@@ -46,7 +46,7 @@ def render_names_at_mouse_location(
     names_at_mouse_location = get_names_at_location(
         x=mouse_x, y=mouse_y, game_map=engine.game_map
     )
-    console.print(x=x, y=y, string=names_at_mouse_location)
+    console.print(x=x, y=y, string=names_at_mouse_location, fg=colours.WHITE)
 
 
 def render_map_mouse_location(
@@ -61,16 +61,16 @@ def render_rooms_at_mouse_location(
 ) -> None:
     room_str = str("")
     for room in engine.game_map.rooms:
-        if room.is_point_in_room(engine.mouse_location):
+        if room.is_point_in_room(engine.map_mouse_location):
             room_str = room.name
 
-    console.print(x=x, y=y, string=room_str)
+    console.print(x=x, y=y, string=room_str, fg=colours.WHITE)
 
 
 def render_fps_counter(
     console: Console, x: int, y: int, fps: int
 ) -> None:
-    console.print(x=x, y=y, string=f"FPS:{fps}")
+    console.print(x=x, y=y, string=f"FPS:{fps}", fg=colours.WHITE)
 
 def render_message_box(console: Console, message: str) -> None:
 

@@ -7,7 +7,7 @@ from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 from tcod.console import Console
 from render_functions import render_message_box
 from actions import Action, CreateJobAction
-from rooms import RoomType, Rooms
+from room_holder import Rooms
 from datetime import datetime, timedelta
 
 from entity import Actor

@@ -9,17 +9,13 @@ from tcod.console import Console
 from entity import Actor, Prop
 from entity_holder import EntityHolder
 from enum import auto, Enum
-from rooms import Rooms
+from room_holder import Rooms
+from utility import Neighbourhood
 import tcod
 
 if TYPE_CHECKING:
     from engine import Engine
     from entity import Entity
-
-
-class Neighbourhood(Enum):
-    VON_NEUMANN = auto()
-    MOORE = auto()
 
 
 class GameMap:
@@ -83,6 +79,16 @@ class GameMap:
     @property
     def entities_sorted_for_rendering(self):
         return sorted(self.all_entities, key=lambda x: x.render_order.value)
+
+    def remove_entity(self, entity):
+        if entity in self.entities:
+            self.entities.remove(entity)
+            return
+
+        for room in self.rooms:
+            if entity in room.entities:
+                self.entities.remove(entity)
+                return
 
     def get_neighbouring_tiles(self, position: Tuple[int, int], neighbourhood: Neighbourhood):
         if neighbourhood is Neighbourhood.VON_NEUMANN:
@@ -180,3 +186,6 @@ class GameMap:
 
     def replace_tile(self, x: int, y: int, tile: np.ndarray):
         self.tiles[x, y] = tile
+
+    def get_room(self, room_type: RoomType):
+        return self.room_holder.get_room(room_type)

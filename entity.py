@@ -24,6 +24,7 @@ class EntityID(Enum):
     FLOOR = auto()
     PENDING_JOB = auto()
     DOOR = auto()
+    FIELD = auto()
 
 
 class Entity:
@@ -72,6 +73,14 @@ class Entity:
         clone.y = y
         clone.gamemap = gamemap
         gamemap.entities.add(clone)
+
+        return clone
+
+    def spawn_in_room(self: T, x: int, y: int) -> T:
+        """Spawn a copy of this instance at the given location."""
+        clone = copy.deepcopy(self)
+        clone.x = x
+        clone.y = y
 
         return clone
 
@@ -182,6 +191,14 @@ class Prop(Entity):
 
     def spawn(self: T, gamemap: GameMap, x: int, y: int) -> T:
         clone = super().spawn(gamemap, x, y)
+
+        if self.colours_bg:
+            clone.bg_colour = colours.colour_lerp(clone.bg_colour, (max(0, clone.bg_colour[0] - 30), max(0, clone.bg_colour[1] - 30), max(0, clone.bg_colour[2] - 30)), max(0.4, random.random()))
+
+        return clone
+
+    def spawn_in_room(self: T, x: int, y: int) -> T:
+        clone = super().spawn_in_room(x, y)
 
         if self.colours_bg:
             clone.bg_colour = colours.colour_lerp(clone.bg_colour, (max(0, clone.bg_colour[0] - 30), max(0, clone.bg_colour[1] - 30), max(0, clone.bg_colour[2] - 30)), max(0.4, random.random()))

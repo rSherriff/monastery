@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from engine import Engine
     from entity import Entity
     from action import Action
+    from game_map import GameMap
 
 
 class RoomType(Enum):
@@ -27,31 +28,16 @@ class RoomType(Enum):
     CELLARIUM = auto()
     DORMITORY = auto()
     CLOISTER = auto()
+    FARM = auto()
 
-
-def get_room_types():
-    return [RoomType.QUIRE, RoomType.CHAPTER_HOUSE, RoomType.REFECTORY, RoomType.CELLARIUM, RoomType.DORMITORY]
-
-
-def get_room_name(room_type: RoomType):
-    if room_type is RoomType.NONE:
-        return "None"
-    if room_type is RoomType.QUIRE:
-        return "Quire"
-    if room_type is RoomType.CHAPTER_HOUSE:
-        return "Chapter House"
-    if room_type is RoomType.REFECTORY:
-        return "Refectory"
-    if room_type is RoomType.CELLARIUM:
-        return "Cellarium"
-    if room_type is RoomType.DORMITORY:
-        return "Dormitory"
-    if room_type is RoomType.CLOISTER:
-        return "Cloister"
+    @staticmethod
+    def get_room_types():
+        return [RoomType.QUIRE, RoomType.CHAPTER_HOUSE, RoomType.REFECTORY, RoomType.CELLARIUM, RoomType.DORMITORY, RoomType.FARM]
 
 
 class Room():
-    def __init__(self, room_type: RoomType, tiles: list):
+    def __init__(self, landscape: GameMap, room_type: RoomType, tiles: list):
+        self.landscape = landscape
         self.type = room_type
         self.tiles = tiles
         self.entity_holder = EntityHolder()
@@ -64,27 +50,33 @@ class Room():
 
     @property
     def name(self) -> str:
-        return get_room_name(self.type)
+        return Room.get_room_name(self.type)
 
     @property
     def entities(self):
         return self.entity_holder.entities
 
-
-class Rooms():
-    def __init__(self, engine: Engine):
-        self.engine = engine
-        self.rooms = list()
+    def update(self):
         pass
 
-    def add_room(self, room_type: RoomType, tiles: list):
-        new_room = Room(room_type, tiles)
-        self.rooms.append(new_room)
-        print(f"Created a new {get_room_name(room_type)}")
+    def spawn_entity(self, entity: Entity, x: int, y: int):
+        self.entities.add(entity.spawn_in_room(x, y))
 
-    def get_room(self, room_type: RoomType):
-        for room in self.rooms:
-            if room.type is room_type:
-                return room
-
-        return None
+    @staticmethod
+    def get_room_name(room_type: RoomType):
+        if room_type is RoomType.NONE:
+            return "None"
+        if room_type is RoomType.QUIRE:
+            return "Quire"
+        if room_type is RoomType.CHAPTER_HOUSE:
+            return "Chapter House"
+        if room_type is RoomType.REFECTORY:
+            return "Refectory"
+        if room_type is RoomType.CELLARIUM:
+            return "Cellarium"
+        if room_type is RoomType.DORMITORY:
+            return "Dormitory"
+        if room_type is RoomType.CLOISTER:
+            return "Cloister"
+        if room_type is RoomType.FARM:
+            return "Farm"

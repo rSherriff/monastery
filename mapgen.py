@@ -9,7 +9,7 @@ import random
 import tile_types
 import utility
 from entity import Actor
-from actions import CreateWallAction, CreateFloorAction, CreatePropAction, CreateJobAction
+from actions import CreateWallAction, CreateFloorAction, CreatePropAction, CreateJobAction, RemovePendingJobAction
 from jobs import JobEffort
 from rooms import RoomType
 
@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 import entity_factories
 
 
-def generate_landscape(engine, map_width, map_height) -> GameMap:
-    landscape = GameMap(engine, map_width, map_height)
+def generate_landscape(engine, landscape, map_width, map_height):
+
     map_center = (int(map_width / 2), int(map_height / 2))
 
     # Generate and draw a voronoi diagram, then grab the points from a few of its sections to fill later
@@ -82,11 +82,6 @@ def generate_landscape(engine, map_width, map_height) -> GameMap:
 
     cloister_size = 14
     place_cloister(landscape, (map_center[0] - (cloister_size // 2), map_center[1] - (cloister_size // 2)), cloister_size)
-
-    # Temp to test entity factories
-    engine.player.place(map_center[0], map_center[1], landscape)
-
-    return landscape
 
 
 def clear_landscape(landscape, bg_colour, fg_colour):
@@ -443,16 +438,19 @@ def place_church(landscape, engine, position: Tuple[int, int]):
             job = None
             if character is 'x' or character is 'u' or character is 'e' or character is 'r' or character is 'q' or character is 'w':
                 locations = utility.get_vonneumann_tiles([x, y])
-                completion_action = CreateWallAction(landscape.engine.player, [x, y])
-                job = JobEffort(locations, 1, completion_action, None, None, "Build Wall")
+                instant_action = CreatePropAction(landscape.engine.player, entity_factories.pending_job, [x, y])
+                completion_action = [CreateWallAction(landscape.engine.player, [x, y]), RemovePendingJobAction(landscape.engine.player, [x, y])]
+                job = JobEffort(locations, 1, instantAction=instant_action, completionAction=completion_action, name="Build Wall")
                 wall_jobs.append(job)
             elif character is 'o':
-                completion_action = CreatePropAction(landscape.engine.player, entity_factories.stone_pillar, [x, y])
-                job = JobEffort([[x, y]], 1, completion_action, None, None, "Create Prop")
+                instant_action = CreatePropAction(landscape.engine.player, entity_factories.pending_job, [x, y])
+                completion_action = [CreatePropAction(landscape.engine.player, entity_factories.stone_pillar, [x, y]), RemovePendingJobAction(landscape.engine.player, [x, y])]
+                job = JobEffort([x, y], 1, instantAction=instant_action, completionAction=completion_action, name="Create Prop")
                 prop_jobs.append(job)
             else:
-                completion_action = CreateFloorAction(landscape.engine.player, [x, y])
-                job = JobEffort([[x, y]], 1, completion_action, None, None, "Build Floor")
+                instant_action = CreatePropAction(landscape.engine.player, entity_factories.pending_job, [x, y])
+                completion_action = [CreateFloorAction(landscape.engine.player, [x, y]), RemovePendingJobAction(landscape.engine.player, [x, y])]
+                job = JobEffort([x, y], 1, instantAction=instant_action, completionAction=completion_action, name="Build Floor")
                 floor_jobs.append(job)
 
             # landscape.tiles[x, y]["graphic"]["ch"] = ord(' ')
@@ -487,16 +485,19 @@ def place_building(landscape, building, engine, position: Tuple[int, int]):
             job = None
             if character is 'x' or character is 'u' or character is 'e' or character is 'r' or character is 'q' or character is 'w':
                 locations = utility.get_vonneumann_tiles([x, y])
-                completion_action = CreateWallAction(landscape.engine.player, [x, y])
-                job = JobEffort(locations, 1, completion_action, None, None, "Build Wall")
+                instant_action = CreatePropAction(landscape.engine.player, entity_factories.pending_job, [x, y])
+                completion_action = [CreateWallAction(landscape.engine.player, [x, y]), RemovePendingJobAction(landscape.engine.player, [x, y])]
+                job = JobEffort(locations, 1, instantAction=instant_action, completionAction=completion_action, name="Build Wall")
                 wall_jobs.append(job)
             elif character is 'o':
-                completion_action = CreatePropAction(landscape.engine.player, entity_factories.stone_pillar, [x, y])
-                job = JobEffort([[x, y]], 1, completion_action, None, None, "Create Prop")
+                instant_action = CreatePropAction(landscape.engine.player, entity_factories.pending_job, [x, y])
+                completion_action = [CreatePropAction(landscape.engine.player, entity_factories.stone_pillar, [x, y]), RemovePendingJobAction(landscape.engine.player, [x, y])]
+                job = JobEffort([x, y], 1, instantAction=instant_action, completionAction=completion_action, name="Create Prop")
                 prop_jobs.append(job)
             else:
-                completion_action = CreateFloorAction(landscape.engine.player, [x, y])
-                job = JobEffort([[x, y]], 1, completion_action, None, None, "Build Floor")
+                instant_action = CreatePropAction(landscape.engine.player, entity_factories.pending_job, [x, y])
+                completion_action = [CreateFloorAction(landscape.engine.player, [x, y]), RemovePendingJobAction(landscape.engine.player, [x, y])]
+                job = JobEffort([x, y], 1, instantAction=instant_action, completionAction=completion_action, name="Build Floor")
                 floor_jobs.append(job)
 
             # landscape.tiles[x, y]["graphic"]["ch"] = ord(' ')
@@ -574,4 +575,4 @@ def place_cloister(landscape, start: Tuple[int, int], size):
             else:
                 room_tiles.append((start[0] + x, start[1] + y))
 
-    landscape.room_holder.add_room(RoomType.CLOISTER, room_tiles)
+    landscape.room_holder.add_room(RoomType.CLOISTER, landscape, room_tiles)

@@ -187,12 +187,12 @@ class Brother(BaseAI):
                 cloister = self.engine.game_map.room_holder.get_room(RoomType.CLOISTER)
                 if cloister is not None:
                     position = cloister.get_random_point_in_room()
-                    job = JobEffort([position], 1, None, None, None, "Idle")
+                    job = JobEffort([position], 1, name="Idle")
                     self.engine.jobs.queue.put(job)
                 else:
                     print("No Cloister!")
             else:
-                job = JobEffort([[self.entity.x, self.entity.y]], 60, None, None, None, "Idle")
+                job = JobEffort([[self.entity.x, self.entity.y]], 60, name="Idle")
                 self.selected_job_location = 0
                 self.job = job
 

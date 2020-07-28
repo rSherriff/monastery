@@ -8,6 +8,7 @@ import colours
 from engine import Engine
 from game_map import GameMap
 from render_functions import render_names_at_mouse_location, render_map_mouse_location, render_rooms_at_mouse_location, render_fps_counter
+import colours
 
 
 def main() -> None:

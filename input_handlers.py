@@ -5,7 +5,7 @@ from actions import Action, EscapeAction, MovementAction, CreateJobAction, Creat
 from enum import auto, Enum
 from jobs import JobEffort
 from highlight import Highlight
-from rooms import get_room_types, get_room_name
+from rooms import Room, RoomType
 
 import tcod.event
 import colours
@@ -141,13 +141,13 @@ class MainGameEventHandler(EventHandler):
                     if self.mouse_action is MouseDesiredAction.BUILD_WALL:
                         locations = utility.get_vonneumann_tiles([x, y])
                         completion_action = CreateWallAction(self.engine.player, [x, y])
-                        job = JobEffort(locations, 1, completion_action, None, None, "Build Wall")
+                        job = JobEffort(locations, 1, completionAction=completion_action, name="Build Wall")
 
                         actions.append(CreateJobAction(player, job))
 
                     if self.mouse_action is MouseDesiredAction.BUILD_FLOOR:
                         completion_action = CreateFloorAction(self.engine.player, [x, y])
-                        job = JobEffort([[x, y]], 1, completion_action, None, None, "Build Floor")
+                        job = JobEffort([[x, y]], 1, completionAction=completion_action, name="Build Floor")
 
                         actions.append(CreateJobAction(player, job))
 
@@ -364,8 +364,8 @@ class RoomPlacer(EventHandler):
         )
         y = 2
         count = 0
-        for room in get_room_types():
-            temp_console.print(x=2, y=y, string=get_room_name(room), fg=colours.RED if count is self.selection else colours.WHITE)
+        for room in RoomType.get_room_types():
+            temp_console.print(x=2, y=y, string=Room.get_room_name(room), fg=colours.RED if count is self.selection else colours.WHITE)
             y += 1
             count += 1
 
@@ -376,9 +376,9 @@ class RoomPlacer(EventHandler):
         player = self.engine.player
 
         if event.sym in CURSOR_Y_KEYS:
-            self.selection = max(0, min(self.selection + CURSOR_Y_KEYS[event.sym], len(get_room_types()) - 1))
+            self.selection = max(0, min(self.selection + CURSOR_Y_KEYS[event.sym], len(RoomType.get_room_types()) - 1))
         elif event.sym == tcod.event.K_RETURN:
-            action = CreateRoomAction(self.engine.player, get_room_types()[self.selection], self.room_tiles)
+            action = CreateRoomAction(self.engine.player, RoomType.get_room_types()[self.selection], self.room_tiles)
             actions.append(action)
             self.shutting_down = True
         else:

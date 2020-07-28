@@ -11,6 +11,7 @@ from jobs import Jobs
 from calendar import Calendar
 from monastery import Monastery
 from ui import UI
+from game_map import GameMap
 
 from mapgen import generate_landscape
 
@@ -19,7 +20,6 @@ import time
 
 if TYPE_CHECKING:
     from entity import Entity
-    from game_map import GameMap
     from input_handlers import EventHandler
 
 
@@ -29,10 +29,12 @@ class Engine:
     def __init__(self, player: Actor, map_width, map_height):
         """ Setting up all the systems that will run during the game. These systems depend on each other so order is very important! """
         self.player = player
+        self.game_map = GameMap(self, map_width, map_height)
+        self.player.place(0, 0, self.game_map)
         self.map_height = map_height
         self.map_width = map_width
         self.jobs = Jobs(self)
-        self.game_map = generate_landscape(self, map_width, map_height)
+        generate_landscape(self, self.game_map, map_width, map_height)
         self.event_handler: EventHandler = MainGameEventHandler(self)
         self.message_log = MessageLog()
         self.map_x_offset = 5

@@ -4,9 +4,10 @@ from __future__ import annotations
 from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 from datetime import datetime, timedelta, time
 from components.base_component import BaseComponent
-from actions import Action, GoToServiceAction, GoToMealAction
+from actions import Action, GoToServiceAction, GoToMealAction, GoToBedAction
 from calendar import Calendar
-from rooms import Rooms, RoomType, Room
+from rooms import RoomType, Room
+from room_holder import Rooms
 
 
 import random
@@ -80,4 +81,4 @@ class BrotherSchedule(BaseSchedule):
         self.add_event("Nones", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=15))
         self.add_event("Vespers", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=18))
         self.add_event("Compline", GoToServiceAction(actor, timedelta(minutes=30)), datetime(1, 1, 1, hour=19))
-        self.add_event("Bedtime", None, datetime(1, 1, 1, hour=20))
+        self.add_event("Bedtime", GoToBedAction(actor), datetime(1, 1, 1, hour=20))

@@ -20,16 +20,25 @@ if TYPE_CHECKING:
 class BaseJob:
     """Class representing a job that some actor is going to go do."""
 
-    def __init__(self, locations: list(Tuple[int, int]), completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
-        self.locations = locations
+    def __init__(self, locations, completionAction=None, cancelAction=None, startAction=None, instantAction=None, name: str = "<unnamed>"):
+
+        if isinstance(locations[0], list):
+            self.locations = locations
+        else:
+            self.locations = [locations]
+
         self.completed = False
         self.name = name
         self.in_progress = False
         self.worker = None
 
-        self.completionAction = completionAction
-        self.cancelAction = cancelAction
-        self.startAction = startAction
+        self.instantAction = instantAction  # Action to be performed when this job is created
+        self.completionAction = completionAction  # Actions to be performed when the job is completed
+        self.cancelAction = cancelAction  # Action to be performed if the job is cancelled
+        self.startAction = startAction  # Action to be performed when the job starts to be worked on
+
+        if self.instantAction is not None:
+            self.instantAction.perform()
 
     def update(self):
         pass
@@ -40,17 +49,30 @@ class BaseJob:
         self.completed = True
 
         if self.completionAction is not None:
-            self.completionAction.perform()
+            if isinstance(self.completionAction, list):
+                for action in self.completionAction:
+                    action.perform()
+            else:
+                self.completionAction.perform()
 
     def cancel(self):
         """Trigger cancel action."""
         if self.cancelAction is not None:
-            self.cancelAction.perform()
+            if isinstance(self.cancelAction, list):
+                for action in self.cancelAction:
+                    action.perform()
+            else:
+                self.cancelAction.perform()
 
     def start(self):
         """Mark self as started and trigger start action."""
         if self.startAction is not None:
-            self.startAction.perform()
+            if isinstance(self.startAction, list):
+                for action in self.startAction:
+                    action.perform()
+            else:
+                self.startAction.perform()
+
         self.in_progress = True
 
     def sort_locations_for_distance(self, point: Tuple[int, int]):
@@ -66,8 +88,8 @@ class BaseJob:
 
 class JobEffort(BaseJob):
 
-    def __init__(self, locations: list(Tuple[int, int]), work: float, completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
-        super().__init__(locations, completionAction, cancelAction, startAction, name)
+    def __init__(self, locations, work: float, completionAction=None, cancelAction=None, startAction=None, instantAction=None, name: str = "<unnamed>"):
+        super().__init__(locations, completionAction, cancelAction, startAction, instantAction, name)
         self.work = work
 
     def update(self, worker: Actor):
@@ -83,8 +105,8 @@ class JobEffort(BaseJob):
 
 class JobUntil(BaseJob):
 
-    def __init__(self, locations: list(Tuple[int, int]), finish_time: datetime, completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
-        super().__init__(locations, completionAction, cancelAction, startAction, name)
+    def __init__(self, locations, finish_time: datetime, completionAction=None, cancelAction=None, startAction=None, instantAction=None, name: str = "<unnamed>"):
+        super().__init__(locations, completionAction, cancelAction, startAction, instantAction, name)
         self.finish_time = finish_time
 
     def update(self, worker: Actor):
@@ -99,7 +121,7 @@ class JobUntil(BaseJob):
 
 
 class JobActorCondition(BaseJob):
-    def __init__(self, locations: list(Tuple[int, int]), finish_condition, completionAction: Action, cancelAction: Action, startAction: Action, name: str = "<unnamed>"):
+    def __init__(self, locations, finish_condition, completionAction=None, cancelAction=None, startAction=None, name: str = "<unnamed>"):
         super().__init__(locations, completionAction, cancelAction, startAction, name)
         self.condition = finish_condition
 
